@@ -56,8 +56,6 @@ int main(int argc, const char** argv)
 		if (argc == 4) {
 			filename = std::string(argv[3]);
 		}
-		else
-			return 0;
 	}
 
 	rst::rasterizer r(700, 700);
@@ -79,7 +77,7 @@ int main(int argc, const char** argv)
 
 		r.set_model(get_model_matrix(angle));
 		r.set_view(get_view_matrix(eye_pos));
-		r.set_projection(get_projection_matrix(45, 1, 0.1f, 50));
+		r.set_projection(get_projection_matrix(45.f, 1, 0.1f, 50.f));
 
 		r.draw(pos_id, ind_id, rst::Primitive::Triangle);
 		cv::Mat image(700, 700, CV_32FC3, r.frame_buffer().data());
@@ -95,7 +93,7 @@ int main(int argc, const char** argv)
 
 		r.set_model(get_model_matrix(angle));
 		r.set_view(get_view_matrix(eye_pos));
-		r.set_projection(get_projection_matrix(45, 1, 0.1f, 50));
+		r.set_projection(get_projection_matrix(45.f, 1.f, 0.1f, 50.f));
 
 		r.draw(pos_id, ind_id, rst::Primitive::Triangle);
 

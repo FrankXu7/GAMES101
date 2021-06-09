@@ -4,7 +4,7 @@
 
 #include <algorithm>
 #include "rasterizer.hpp"
-#include <opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <math.h>
 #include <stdexcept>
 
@@ -36,30 +36,30 @@ void rst::rasterizer::draw_line(Eigen::Vector3f begin, Eigen::Vector3f end)
 
 	Eigen::Vector3f line_color = { 255, 255, 255 };
 
-	int x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
+	float x, y, dx, dy, dx1, dy1, px, py, xe, ye, i;
 
-	dx = static_cast<int>(x2 - x1);
-	dy = static_cast<int>(y2 - y1);
-	dx1 = static_cast<int>(fabs(dx));
-	dy1 = static_cast<int>(fabs(dy));
-	px = static_cast<int>(2 * dy1 - dx1);
-	py = static_cast<int>(2 * dx1 - dy1);
+	dx = x2 - x1;
+	dy = y2 - y1;
+	dx1 = fabs(dx);
+	dy1 = fabs(dy);
+	px = 2 * dy1 - dx1;
+	py = 2 * dx1 - dy1;
 
 	if (dy1 <= dx1)
 	{
 		if (dx >= 0)
 		{
-			x = static_cast<int>(x1);
-			y = static_cast<int>(y1);
-			xe = static_cast<int>(x2);
+			x = x1;
+			y = y1;
+			xe = x2;
 		}
 		else
 		{
-			x = static_cast<int>(x2);
-			y = static_cast<int>(y2);
-			xe = static_cast<int>(x1);
+			x = x2;
+			y = y2;
+			xe = x1;
 		}
-		Eigen::Vector3f point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), 1.0f);
+		Eigen::Vector3f point = Eigen::Vector3f(x, y, 1.0f);
 		set_pixel(point, line_color);
 		for (i = 0; x < xe; i++)
 		{
@@ -81,7 +81,7 @@ void rst::rasterizer::draw_line(Eigen::Vector3f begin, Eigen::Vector3f end)
 				px = px + 2 * (dy1 - dx1);
 			}
 			//            delay(0);
-			Eigen::Vector3f point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), 1.0f);
+			Eigen::Vector3f point = Eigen::Vector3f(x, y, 1.0f);
 			set_pixel(point, line_color);
 		}
 	}
@@ -89,17 +89,17 @@ void rst::rasterizer::draw_line(Eigen::Vector3f begin, Eigen::Vector3f end)
 	{
 		if (dy >= 0)
 		{
-			x = static_cast<int>(x1);
-			y = static_cast<int>(y1);
-			ye = static_cast<int>(y2);
+			x = x1;
+			y = y1;
+			ye = y2;
 		}
 		else
 		{
-			x = static_cast<int>(x2);
-			y = static_cast<int>(y2);
-			ye = static_cast<int>(y1);
+			x = x2;
+			y = y2;
+			ye = y1;
 		}
-		Eigen::Vector3f point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), 1.0f);
+		Eigen::Vector3f point = Eigen::Vector3f(x, y, 1.0f);
 		set_pixel(point, line_color);
 		for (i = 0; y < ye; i++)
 		{
@@ -121,7 +121,7 @@ void rst::rasterizer::draw_line(Eigen::Vector3f begin, Eigen::Vector3f end)
 				py = py + 2 * (dx1 - dy1);
 			}
 			//            delay(0);
-			Eigen::Vector3f point = Eigen::Vector3f(static_cast<float>(x), static_cast<float>(y), 1.0f);
+			Eigen::Vector3f point = Eigen::Vector3f(x, y, 1.0f);
 			set_pixel(point, line_color);
 		}
 	}
@@ -141,8 +141,8 @@ void rst::rasterizer::draw(rst::pos_buf_id pos_buffer, rst::ind_buf_id ind_buffe
 	auto& buf = pos_buf[pos_buffer.pos_id];
 	auto& ind = ind_buf[ind_buffer.ind_id];
 
-	float f1 = static_cast<float>((100 - 0.1) / 2.0);
-	float f2 = static_cast<float>((100 + 0.1) / 2.0);
+	float f1 = (100 - 0.1f) / 2.0f;
+	float f2 = (100 + 0.1f) / 2.0f;
 
 	Eigen::Matrix4f mvp = projection * view * model;
 	for (auto& i : ind)
@@ -161,9 +161,9 @@ void rst::rasterizer::draw(rst::pos_buf_id pos_buffer, rst::ind_buf_id ind_buffe
 
 		for (auto& vert : v)
 		{
-			vert.x() = static_cast<float>(0.5 * width * (vert.x() + 1.0));
-			vert.y() = static_cast<float>(0.5 * height * (vert.y() + 1.0));
-			vert.z() = static_cast<float>(vert.z() * f1 + f2);
+			vert.x() = 0.5f * width * (vert.x() + 1.0f);
+			vert.y() = 0.5f * height * (vert.y() + 1.0f);
+			vert.z() = vert.z() * f1 + f2;
 		}
 
 		for (int i = 0; i < 3; ++i)
@@ -231,7 +231,7 @@ void rst::rasterizer::set_pixel(const Eigen::Vector3f& point, const Eigen::Vecto
 	//old index: auto ind = point.y() + point.x() * width;
 	if (point.x() < 0 || point.x() >= width ||
 		point.y() < 0 || point.y() >= height) return;
-	unsigned int ind = static_cast<unsigned int>((height - point.y()) * width + point.x());
-	frame_buf[ind] = color;
+	auto ind = (height - 1 - point.y()) * width + point.x();
+	frame_buf[ind] = const_cast<Eigen::Vector3f&>(color);
 }
 

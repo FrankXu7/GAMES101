@@ -1,5 +1,5 @@
 //
-// Created by LEI XU on 4/11/19. 
+// Created by LEI XU on 4/11/19.
 //
 
 #include "Triangle.hpp"
@@ -33,7 +33,7 @@ void Triangle::setColor(int ind, float r, float g, float b)
 		throw std::runtime_error("Invalid color values");
 	}
 
-	color[ind] = Vector3f(static_cast<float>(r / 255.f), static_cast<float>(g / 255.f), static_cast<float>(b / 255.f));
+	color[ind] = Vector3f(r / 255.f, g / 255.f, b / 255.f);
 	return;
 }
 void Triangle::setTexCoord(int ind, float s, float t)
@@ -41,7 +41,7 @@ void Triangle::setTexCoord(int ind, float s, float t)
 	tex_coords[ind] = Vector2f(s, t);
 }
 
-std::array<Vector4f, 3> Triangle::toVector4() const
+std::array<Vector4f, 3> Triangle::toVector4() const 
 {
 	std::array<Vector4f, 3> res;
 	std::transform(std::begin(v), std::end(v), res.begin(), [](auto& vec) {

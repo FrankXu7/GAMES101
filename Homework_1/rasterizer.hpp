@@ -1,5 +1,5 @@
 //
-// Created by goksu on 4/6/19. 
+// Created by goksu on 4/6/19.
 //
 
 #pragma once
@@ -87,4 +87,4 @@ namespace rst {
 		int next_id = 0;
 		int get_next_id() { return next_id++; }
 	};
-} // namespace rst
+} 
