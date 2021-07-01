@@ -131,7 +131,8 @@ int main(int argc, const char** argv)
 		cv::imshow("image", image);
 		key = cv::waitKey(100);
 
-		std::cout << "frame count: " << frame_count++ << '\n';
+		angle += 0.5;
+		std::cout << "frame count: " << frame_count++ << "\t Angle: " << angle << '\n';
 
 		if (key == 'a') {
 			angle += 10;
