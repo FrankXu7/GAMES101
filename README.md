@@ -13,6 +13,6 @@ Visual Studio 环境配置：
 
 ② **VC++目录**->**库目录**，引入 **opencv\build\x64\vc15\lib** 所在路径；
 
-③ C/C++**附加包目录**，引入 **eigen3\Eigen** 所在路径；
+③ **C/C++**->**附加包目录**，引入 **eigen-X.X.X\Eigen** 所在路径；
 
 ④ **链接器**->**输入**->**附加依赖项**，**opencv_world452.lib**    **opencv_world452d.lib** （需换行）；
