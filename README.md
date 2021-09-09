@@ -9,10 +9,10 @@ Visual Studio 环境配置：
 
 2、引入库的项目属性配置：
 
-① VC++目录中**包含目录**，引入 **opencv\build\include** 所在路径；
+① **VC++目录**->**包含目录**，引入 **opencv\build\include** 所在路径；
 
-② VC++目录中**库目录**，引入 **opencv\build\x64\vc15\lib** 所在路径；
+② **VC++目录**->**库目录**，引入 **opencv\build\x64\vc15\lib** 所在路径；
 
 ③ C/C++**附加包目录**，引入 **eigen3\Eigen** 所在路径；
 
-④ **链接器**->**输入**->**附加依赖项**，**opencv_world452.lib**\t**opencv_world452d.lib** （需换行）；
+④ **链接器**->**输入**->**附加依赖项**，**opencv_world452.lib**    **opencv_world452d.lib** （需换行）；
