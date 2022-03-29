@@ -5,8 +5,8 @@ Homeworks of GAMES101 courses. Library based on Eigen of 3.3.9 version.
 
 Visual Studio 环境配置：
 
-1. **Eigen**开源模板库。
-2. 安装（实际上是解压）**OpenCV**软件库，配置环境变量，路径为：**opencv\build\x64\vc15\bin**，需要**重启计算机后生效**。
+1. **Eigen**开源模板库。[[官网]](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+2. 安装（实际上是解压）**OpenCV**软件库，配置环境变量，路径为：**opencv\build\x64\vc15\bin**，需要**重启计算机后生效**。[[官网]](https://opencv.org/releases/)
 3. 项目属性配置：
 
 ​	① **VC++目录**->**包含目录**，引入 **opencv\build\include** 所在路径；
