@@ -18,6 +18,9 @@ void Homework()
 	// PI/180 arc可表示为：acos(-1)/180 
 	double degArc = acos(-1) / 180;
 
+	double num1 = sin(30);
+	double num2 = cos(30);
+
 	// 旋转矩阵
 	Eigen::Matrix3d rotM;
 	rotM <<

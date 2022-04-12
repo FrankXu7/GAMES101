@@ -15,4 +15,4 @@ Visual Studio 环境配置：
 
 ​	③ **C/C++**->**附加包目录**，引入 **Eigen** 的根目录，这里需要注意的是，解压后根目录名称为 eigen-X.X.X，将其重命名为 Eigen 即可，因为GAMES101给的项目框架包含文件时是以Eigen命名的。
 
-​	④ **链接器**->**输入**->**附加依赖项**，添加 **opencv_worldXXX.lib**  和 **opencv_worldXXXd.lib** 两个附加依赖项，其中的 XXX 表示的是版本，比如安装的是 4.5.5 版本的OpenCV，那这两个附加依赖项的名称就是 opencv_world455.lib 和 opencv_world455d.lib，它们的路径是：**opencv\build\x64\vc15\lib**，按实际情况添加即可。
+​	④ **链接器**->**输入**->**附加依赖项**，添加 **opencv_worldXXX.lib**  和 **opencv_worldXXXd.lib** 两个附加依赖项（位于目录：**opencv\build\x64\vc15\lib**），名称中**末尾带 'd'** 的表示针对**Debug版本**，**末尾不带 'd'** 的表示针对**Release版本**，其中的 **XXX** 表示的是**OpenCV的版本号**。比如安装的是 4.5.5 版本的OpenCV，且需要配置在Debug模式下运行，则附加依赖项添加的lib文件名称为：opencv_world455d.lib，需要特别注意Debug和Release版本的lib不可混用，**仅添加对应版本的lib文件即可**，否则可能导致OpenCV功能异常。
