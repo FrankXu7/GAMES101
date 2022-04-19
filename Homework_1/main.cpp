@@ -50,13 +50,53 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 	// Create the projection matrix for the given parameters.
 	// Then return it.
 
-	// 已知视场角、宽高比以及远/近距离，直接按公式写出透视投影矩阵 
+#if 0
+
+	/** 已知视场角、宽高比以及远/近距离，直接按公式写出透视投影矩阵  */
+
 	float cot_half_fov = 1 / (tan(eye_fov * (MY_PI / 180) / 2)); // 即 cot(θ/2) 的值 
 	projection <<
 		cot_half_fov / aspect_ratio, 0, 0, 0,
 		0, cot_half_fov, 0, 0,
 		0, 0, (zNear + zFar) / (zNear - zFar), -(2 * zNear * zFar / (zNear - zFar)),
 		0, 0, -1, 0; // 默认情况下是从-Z看向+Z，但给出的eye_pos是(0,0,5)，看向的方向和公式默认方向相反，故齐次坐标Z轴取反
+
+#else
+
+	/** 透视投影先“挤压”到长方体，然后再进行正交投影（先平移，再缩放） */
+
+	// 依据 tan(FovY) = t/n，已知视场角FovY和近平面n，可求高度t
+	float t = tan(eye_fov / 2.f) * zNear, b = -t;
+	// 依据 ascept ratio = r/t，已知宽高比ascept ratio和高度t，可求宽度r
+	float r = t * aspect_ratio, l = -r;
+
+	// 透视投影：挤压到长方体（挤压后再进行正交投影）
+	Eigen::Matrix4f PerspOrtho = Eigen::Matrix4f::Identity();
+	PerspOrtho <<
+		zNear, 0, 0, 0,
+		0, zNear, 0, 0,
+		0, 0, zNear + zFar, -(zNear * zFar),
+		0, 0, -1, 0; // 默认情况下是从-Z看向+Z，但给出的eye_pos是(0,0,5)，看向的方向和公式默认方向相反，故齐次坐标Z轴取反
+
+	// 正交投影：空间中心平移至原点
+	Eigen::Matrix4f OrthoTranstion = Eigen::Matrix4f::Identity();
+	OrthoTranstion <<
+		1, 0, 0, -((r + l) / 2),
+		0, 1, 0, -((t + b) / 2),
+		0, 0, 1, -((zNear + zFar) / 2),
+		0, 0, 0, 1;
+
+	// 正交投影：坐标轴缩放至 [-1, 1]³ 的标准立方体中
+	Eigen::Matrix4f OrthoScale = Eigen::Matrix4f::Identity();
+	OrthoScale <<
+		2 / (r - l), 0, 0, 0,
+		0, 2 / (t - b), 0, 0,
+		0, 0, 2 / (zNear - zFar), 0,
+		0, 0, 0, 1;
+
+	projection = OrthoScale * OrthoTranstion * PerspOrtho;
+
+#endif
 
 	return projection;
 }
@@ -121,8 +161,8 @@ int main(int argc, const char** argv)
 
 		//std::cout << "frame count: " << frame_count++ << '\n';
 
-		if (key == 'a') angle += 5;
-		else if (key == 'd') angle -= 5;
+		if (key == 'a' || key == 'A') angle += 5;
+		else if (key == 'd' || key == 'D') angle -= 5;
 
 		std::cout << "CurAngle: " << angle << std::endl;
 	}
