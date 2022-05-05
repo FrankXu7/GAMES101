@@ -70,14 +70,6 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 	// 依据 ascept ratio = r/t，已知宽高比ascept ratio和高度t，可求宽度r
 	float r = t * aspect_ratio, l = -r;
 
-	// 透视投影：挤压到长方体（挤压后再进行正交投影）
-	Eigen::Matrix4f PerspOrtho = Eigen::Matrix4f::Identity();
-	PerspOrtho <<
-		zNear, 0, 0, 0,
-		0, zNear, 0, 0,
-		0, 0, zNear + zFar, -(zNear * zFar),
-		0, 0, -1, 0; // 默认情况下是从-Z看向+Z，但给出的eye_pos是(0,0,5)，看向的方向和公式默认方向相反，故齐次坐标Z轴取反
-
 	// 正交投影：空间中心平移至原点
 	Eigen::Matrix4f OrthoTranstion = Eigen::Matrix4f::Identity();
 	OrthoTranstion <<
@@ -93,6 +85,14 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 		0, 2 / (t - b), 0, 0,
 		0, 0, 2 / (zNear - zFar), 0,
 		0, 0, 0, 1;
+
+	// 透视投影：挤压到长方体（挤压后再进行正交投影）
+	Eigen::Matrix4f PerspOrtho = Eigen::Matrix4f::Identity();
+	PerspOrtho <<
+		zNear, 0, 0, 0,
+		0, zNear, 0, 0,
+		0, 0, zNear + zFar, -(zNear * zFar),
+		0, 0, -1, 0; // 默认情况下是从-Z看向+Z，但给出的eye_pos是(0,0,5)，看向的方向和公式默认方向相反，故齐次坐标Z轴取反
 
 	projection = OrthoScale * OrthoTranstion * PerspOrtho;
 
