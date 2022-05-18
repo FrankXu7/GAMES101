@@ -11,8 +11,11 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 	Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
 	Eigen::Matrix4f translate;
-	translate << 1, 0, 0, -eye_pos[0], 0, 1, 0, -eye_pos[1], 0, 0, 1,
-		-eye_pos[2], 0, 0, 0, 1;
+	translate << 
+		1, 0, 0, -eye_pos[0], 
+		0, 1, 0, -eye_pos[1],
+		0, 0, 1, -eye_pos[2], 
+		0, 0, 0, 1;
 
 	view = translate * view;
 
@@ -27,10 +30,10 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
 	// Create the model matrix for rotating the triangle around the Z axis.
 	// Then return it.
 
-	// 计算给定角度的弧度值 
+	// 计算给定角度的弧度值
 	float arcValue = rotation_angle * (MY_PI / 180);
 
-	model <<
+	model << 
 		cos(arcValue), -sin(arcValue), 0, 0,
 		sin(arcValue), cos(arcValue), 0, 0,
 		0, 0, 1, 0,
@@ -40,7 +43,7 @@ Eigen::Matrix4f get_model_matrix(float rotation_angle)
 }
 
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
-	float zNear, float zFar)
+									  float zNear, float zFar)
 {
 	// Students will implement this function
 
@@ -49,6 +52,17 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 	// TODO: Implement this function
 	// Create the projection matrix for the given parameters.
 	// Then return it.
+
+	/**
+	 * OpenCV采用左手系，且原点位于屏幕左上角；
+	 * 作业框架也采用左手系，但原点位于屏幕左下角；
+	 * 
+	 * 所以作业框架的图形在OpenCV环境中被渲染出来相当于绕X轴向屏幕外旋转了180°，
+	 * 表现出的效果就是图形上下颠倒；
+	 * 
+	 * 将Z轴取反即可保证在OpenCV中渲染出来的图形和作业框架中的保持一致
+	 */
+	float zSign = -1;
 
 #if 0
 
@@ -59,7 +73,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 		cot_half_fov / aspect_ratio, 0, 0, 0,
 		0, cot_half_fov, 0, 0,
 		0, 0, (zNear + zFar) / (zNear - zFar), -(2 * zNear * zFar / (zNear - zFar)),
-		0, 0, -1, 0; // 默认情况下是从-Z看向+Z，但给出的eye_pos是(0,0,5)，看向的方向和公式默认方向相反，故齐次坐标Z轴取反
+		0, 0, zSign, 0;
 
 #else
 
@@ -72,27 +86,24 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 
 	// 正交投影：空间中心平移至原点
 	Eigen::Matrix4f OrthoTranstion = Eigen::Matrix4f::Identity();
-	OrthoTranstion <<
-		1, 0, 0, -((r + l) / 2),
+	OrthoTranstion << 1, 0, 0, -((r + l) / 2),
 		0, 1, 0, -((t + b) / 2),
 		0, 0, 1, -((zNear + zFar) / 2),
 		0, 0, 0, 1;
 
 	// 正交投影：坐标轴缩放至 [-1, 1]³ 的标准立方体中
 	Eigen::Matrix4f OrthoScale = Eigen::Matrix4f::Identity();
-	OrthoScale <<
-		2 / (r - l), 0, 0, 0,
+	OrthoScale << 2 / (r - l), 0, 0, 0,
 		0, 2 / (t - b), 0, 0,
 		0, 0, 2 / (zNear - zFar), 0,
 		0, 0, 0, 1;
 
 	// 透视投影：挤压到长方体（挤压后再进行正交投影）
 	Eigen::Matrix4f PerspOrtho = Eigen::Matrix4f::Identity();
-	PerspOrtho <<
-		zNear, 0, 0, 0,
+	PerspOrtho << zNear, 0, 0, 0,
 		0, zNear, 0, 0,
 		0, 0, zNear + zFar, -(zNear * zFar),
-		0, 0, -1, 0; // 默认情况下是从-Z看向+Z，但给出的eye_pos是(0,0,5)，看向的方向和公式默认方向相反，故齐次坐标Z轴取反
+		0, 0, zSign, 0;
 
 	projection = OrthoScale * OrthoTranstion * PerspOrtho;
 
@@ -101,27 +112,29 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 	return projection;
 }
 
-int main(int argc, const char** argv)
+int main(int argc, const char **argv)
 {
 	float angle = 0;
 	bool command_line = false;
 	std::string filename = "output.png";
 
-	if (argc >= 3) {
+	if (argc >= 3)
+	{
 		command_line = true;
 		angle = std::stof(argv[2]); // -r by default
-		if (argc == 4) {
+		if (argc == 4)
+		{
 			filename = std::string(argv[3]);
 		}
 	}
 
 	rst::rasterizer r(700, 700);
 
-	Eigen::Vector3f eye_pos = { 0, 0, 5 };
+	Eigen::Vector3f eye_pos = {0, 0, 5};
 
-	std::vector<Eigen::Vector3f> pos{ {2, 0, -2}, {0, 2, -2}, {-2, 0, -2} };
+	std::vector<Eigen::Vector3f> pos{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
 
-	std::vector<Eigen::Vector3i> ind{ {0, 1, 2} };
+	std::vector<Eigen::Vector3i> ind{{0, 1, 2}};
 
 	auto pos_id = r.load_positions(pos);
 	auto ind_id = r.load_indices(ind);
@@ -129,7 +142,8 @@ int main(int argc, const char** argv)
 	int key = 0;
 	int frame_count = 0;
 
-	if (command_line) {
+	if (command_line)
+	{
 		r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
 		r.set_model(get_model_matrix(angle));
@@ -145,7 +159,8 @@ int main(int argc, const char** argv)
 		return 0;
 	}
 
-	while (key != 27) {
+	while (key != 27)
+	{
 		r.clear(rst::Buffers::Color | rst::Buffers::Depth);
 
 		r.set_model(get_model_matrix(angle));
@@ -159,10 +174,12 @@ int main(int argc, const char** argv)
 		cv::imshow("image", image);
 		key = cv::waitKey(10);
 
-		//std::cout << "frame count: " << frame_count++ << '\n';
+		// std::cout << "frame count: " << frame_count++ << '\n';
 
-		if (key == 'a' || key == 'A') angle += 5;
-		else if (key == 'd' || key == 'D') angle -= 5;
+		if (key == 'a' || key == 'A')
+			angle += 5;
+		else if (key == 'd' || key == 'D')
+			angle -= 5;
 
 		std::cout << "CurAngle: " << angle << std::endl;
 	}

@@ -12,7 +12,8 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 	Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
 	Eigen::Matrix4f translate;
-	translate << 1, 0, 0, -eye_pos[0],
+	translate << 
+		1, 0, 0, -eye_pos[0],
 		0, 1, 0, -eye_pos[1],
 		0, 0, 1, -eye_pos[2],
 		0, 0, 0, 1;
@@ -25,6 +26,13 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 Eigen::Matrix4f get_model_matrix(float rotation_angle)
 {
 	Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+
+	model << 
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1;
+
 	return model;
 }
 
@@ -36,12 +44,16 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
 	// 记录 cot(θ/2) 便于计算
 	float cot_half_fov = 1 / (tan(eye_fov * (MY_PI / 180) / 2));
 
+	zNear *= -1;
+	zFar *= -1;
+	float zSign = 1.f;
+
 	// 设置透视投影矩阵
 	projection <<
 		cot_half_fov / aspect_ratio, 0, 0, 0,
 		0, cot_half_fov, 0, 0,
-		0, 0, (zNear + zFar) / (zNear - zFar), 0,
-		0, 0, -1, 0;
+		0, 0, (zNear + zFar) / (zNear - zFar), -(2 * zNear * zFar) / (zNear - zFar),
+		0, 0, zSign, 0;
 
 	return projection;
 }
@@ -131,7 +143,7 @@ int main(int argc, const char** argv)
 		cv::imshow("image", image);
 		key = cv::waitKey(10);
 
-		std::cout << "frame count: " << frame_count++ << '\n';
+		//std::cout << "frame count: " << frame_count++ << '\n';
 	}
 
 	return 0;

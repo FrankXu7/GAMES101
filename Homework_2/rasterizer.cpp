@@ -99,6 +99,7 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t) 
 {
+	// 返回的是4x4的齐次矩阵
 	auto v = t.toVector4();
 
 	// TODO : Find out the bounding box of current triangle.
@@ -106,8 +107,8 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t)
 
 	// 构建BoundingBox包围盒，只考虑二维平面
 	int MinX = static_cast<int>(std::min(v[0][0], std::min(v[1][0], v[2][0])));
-	int MaxX = static_cast<int>(std::max(v[0][1], std::max(v[1][1], v[2][1])));
-	int MinY = static_cast<int>(std::min(v[0][0], std::min(v[1][0], v[2][0])));
+	int MaxX = static_cast<int>(std::max(v[0][0], std::max(v[1][0], v[2][0])));
+	int MinY = static_cast<int>(std::min(v[0][1], std::min(v[1][1], v[2][1])));
 	int MaxY = static_cast<int>(std::max(v[0][1], std::max(v[1][1], v[2][1])));
 
 	for (int x = MinX; x <= MaxX; ++x)
@@ -125,10 +126,17 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t)
 
 			// 与深度缓存进行比较
 			int pointIdx = get_index(x, y);
-			if (z_interpolated <= depth_buf[pointIdx]) continue;
+			if (z_interpolated < depth_buf[pointIdx])
+			{
+				// 更新深度缓存
+				depth_buf[pointIdx] = z_interpolated;
 
-			// 更新深度缓存
-			depth_buf[pointIdx] = z_interpolated;
+				// 重新设置像素点颜色
+				Vector3f color = t.getColor();
+				Vector3f point;
+				point << x, y, z_interpolated;
+				set_pixel(point, color);
+			}
 		}
 	}
 
