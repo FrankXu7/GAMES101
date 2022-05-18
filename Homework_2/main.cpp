@@ -44,9 +44,20 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
 	// 记录 cot(θ/2) 便于计算
 	float cot_half_fov = 1 / (tan(eye_fov * (MY_PI / 180) / 2));
 
+	/**
+	 * OpenCV采用左手系，且原点位于屏幕左上角；
+	 * 作业框架也采用左手系，但原点位于屏幕左下角；
+	 *
+	 * 所以作业框架的图形在OpenCV环境中被渲染出来相当于绕X轴向屏幕外旋转了180°，
+	 * 表现出的效果就是图形上下颠倒；
+	 *
+	 * 将Z轴取反即可保证在OpenCV中渲染出来的图形和作业框架中的保持一致
+	 */
+	float zSign = -1;
+
+	// 图形上下翻转了，渲染的顺序自然也跟着翻转
 	zNear *= -1;
 	zFar *= -1;
-	float zSign = 1.f;
 
 	// 设置透视投影矩阵
 	projection <<

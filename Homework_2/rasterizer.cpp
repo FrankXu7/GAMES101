@@ -39,22 +39,14 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 	return Vector4f(v3.x(), v3.y(), v3.z(), w);
 }
 
-static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector3f* v)
-{
-	float c1 = (x * (v[1].y() - v[2].y()) + (v[2].x() - v[1].x()) * y + v[1].x() * v[2].y() - v[2].x() * v[1].y()) / (v[0].x() * (v[1].y() - v[2].y()) + (v[2].x() - v[1].x()) * v[0].y() + v[1].x() * v[2].y() - v[2].x() * v[1].y());
-	float c2 = (x * (v[2].y() - v[0].y()) + (v[0].x() - v[2].x()) * y + v[2].x() * v[0].y() - v[0].x() * v[2].y()) / (v[1].x() * (v[2].y() - v[0].y()) + (v[0].x() - v[2].x()) * v[1].y() + v[2].x() * v[0].y() - v[0].x() * v[2].y());
-	float c3 = (x * (v[0].y() - v[1].y()) + (v[1].x() - v[0].x()) * y + v[0].x() * v[1].y() - v[1].x() * v[0].y()) / (v[2].x() * (v[0].y() - v[1].y()) + (v[1].x() - v[0].x()) * v[2].y() + v[0].x() * v[1].y() - v[1].x() * v[0].y());
-	return { c1,c2,c3 };
-}
-
 void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf_id col_buffer, Primitive type)
 {
 	auto& buf = pos_buf[pos_buffer.pos_id];
 	auto& ind = ind_buf[ind_buffer.ind_id];
 	auto& col = col_buf[col_buffer.col_id];
 
-	float f1 = (50 - 0.1) / 2.0;
-	float f2 = (50 + 0.1) / 2.0;
+	float f1 = (50 - 0.1f) / 2.f;
+	float f2 = (50 + 0.1f) / 2.f;
 
 	Eigen::Matrix4f mvp = projection * view * model;
 	for (auto& i : ind)
@@ -72,8 +64,8 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 		//Viewport transformation
 		for (auto& vert : v)
 		{
-			vert.x() = 0.5 * width * (vert.x() + 1.0);
-			vert.y() = 0.5 * height * (vert.y() + 1.0);
+			vert.x() = 0.5f * width * (vert.x() + 1.f);
+			vert.y() = 0.5f * height * (vert.y() + 1.f);
 			vert.z() = vert.z() * f1 + f2;
 		}
 
@@ -99,30 +91,106 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t) 
 {
-	// 返回的是4x4的齐次矩阵
-	auto v = t.toVector4();
-
 	// TODO : Find out the bounding box of current triangle.
 	// iterate through the pixel and find if the current pixel is inside the triangle
 
 	// 构建BoundingBox包围盒，只考虑二维平面
-	int MinX = static_cast<int>(std::min(v[0][0], std::min(v[1][0], v[2][0])));
-	int MaxX = static_cast<int>(std::max(v[0][0], std::max(v[1][0], v[2][0])));
-	int MinY = static_cast<int>(std::min(v[0][1], std::min(v[1][1], v[2][1])));
-	int MaxY = static_cast<int>(std::max(v[0][1], std::max(v[1][1], v[2][1])));
+	int MinX = static_cast<int>(std::min(t.v[0][0], std::min(t.v[1][0], t.v[2][0])));
+	int MaxX = static_cast<int>(std::max(t.v[0][0], std::max(t.v[1][0], t.v[2][0])));
+	int MinY = static_cast<int>(std::min(t.v[0][1], std::min(t.v[1][1], t.v[2][1])));
+	int MaxY = static_cast<int>(std::max(t.v[0][1], std::max(t.v[1][1], t.v[2][1])));
 
 	for (int x = MinX; x <= MaxX; ++x)
 	{
 		for (int y = MinY; y <= MaxY; ++y)
 		{
+			// 颜色的着色比例，默认覆盖像素中央时全着色
+			float colorPercent = 1.f;
+#if 1
 			if (!t.insideTriangle(static_cast<float>(x + 0.5f), static_cast<float>(y + 0.5f))) continue;
+			// 计算深度在三角形中的插值 
+			float z_interpolated = calcDepth3D(x, y, t);
+#elif 0
+			// 将一个像素分成4个部分分别进行多重采样，取4个子采样点中深度插值最小的
+			float z_interpolated = FLT_MAX;
+			// 被三角形覆盖的子采样点的数里
+			int coverCount = 0;
 
-			// 插值计算深度，下述计算插值的代码由框架提供 
-			std::tuple<float, float, float> ob = computeBarycentric2D(static_cast<float>(x + 0.5f), static_cast<float>(y + 0.5f), t.v);
-			float alpha = std::get<0>(ob), beta = std::get<1>(ob), gamma = std::get<2>(ob);
-			float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
-			float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
-			z_interpolated *= w_reciprocal;
+			// 从左上角开始，从左往右，从上往下处理
+			if (t.insideTriangle(static_cast<float>(x + 0.25f), static_cast<float>(y + 0.75f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.75f), static_cast<float>(y + 0.75f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.25f), static_cast<float>(y + 0.25f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.75f), static_cast<float>(y + 0.25f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+
+			if (coverCount == 0) continue;
+			else colorPercent = coverCount / 4.f;
+#elif 0
+			// 将一个像素分成8个部分分别进行多重采样，取4个子采样点中深度插值最小的
+			float z_interpolated = FLT_MAX;
+			// 被三角形覆盖的子采样点的数里
+			int coverCount = 0;
+
+			// 从左上角开始，从左往右，从上往下处理
+			if (t.insideTriangle(static_cast<float>(x + 0.125f), static_cast<float>(y + 0.875f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.875f), static_cast<float>(y + 0.875f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.25f), static_cast<float>(y + 0.75f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.75f), static_cast<float>(y + 0.75f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.25f), static_cast<float>(y + 0.25f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.75f), static_cast<float>(y + 0.25f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.125f), static_cast<float>(y + 0.125f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+			if (t.insideTriangle(static_cast<float>(x + 0.875f), static_cast<float>(y + 0.125f)))
+			{
+				z_interpolated = std::min(z_interpolated, calcDepth3D(x, y, t));
+				++coverCount;
+			}
+
+			if (coverCount == 0) continue;
+			else colorPercent = coverCount / 8.f;
+#endif
 
 			// 与深度缓存进行比较
 			int pointIdx = get_index(x, y);
@@ -132,7 +200,7 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t)
 				depth_buf[pointIdx] = z_interpolated;
 
 				// 重新设置像素点颜色
-				Vector3f color = t.getColor();
+				Vector3f color = t.getColor() * colorPercent;
 				Vector3f point;
 				point << x, y, z_interpolated;
 				set_pixel(point, color);
