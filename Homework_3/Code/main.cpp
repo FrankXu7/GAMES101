@@ -13,7 +13,8 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 	Eigen::Matrix4f view = Eigen::Matrix4f::Identity();
 
 	Eigen::Matrix4f translate;
-	translate << 1, 0, 0, -eye_pos[0],
+	translate <<
+		1, 0, 0, -eye_pos[0],
 		0, 1, 0, -eye_pos[1],
 		0, 0, 1, -eye_pos[2],
 		0, 0, 0, 1;
@@ -27,19 +28,22 @@ Eigen::Matrix4f get_model_matrix(float angle)
 {
 	Eigen::Matrix4f rotation;
 	angle = angle * MY_PI / 180.f;
-	rotation << cos(angle), 0, sin(angle), 0,
+	rotation <<
+		cos(angle), 0, sin(angle), 0,
 		0, 1, 0, 0,
 		-sin(angle), 0, cos(angle), 0,
 		0, 0, 0, 1;
 
 	Eigen::Matrix4f scale;
-	scale << 2.5, 0, 0, 0,
+	scale <<
+		2.5, 0, 0, 0,
 		0, 2.5, 0, 0,
 		0, 0, 2.5, 0,
 		0, 0, 0, 1;
 
 	Eigen::Matrix4f translate;
-	translate << 1, 0, 0, 0,
+	translate <<
+		1, 0, 0, 0,
 		0, 1, 0, 0,
 		0, 0, 1, 0,
 		0, 0, 0, 1;
@@ -50,8 +54,34 @@ Eigen::Matrix4f get_model_matrix(float angle)
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
 	// TODO: Use the same projection matrix from the previous assignments
-	Eigen::Matrix4f ob;
-	return ob;
+
+	/**
+	 * OpenVC左手法则，以左上角为原点；
+	 * 作业框架也是左手法则，但以左下角为原点；
+	 *
+	 * 作业框架的图形被OpenCV渲染后会翻转180°，所以，将齐次矩阵中的Z值取反，
+	 * 相当于摄像机旋转了180°，这样OpenCV渲染的图形就和作业框架保持一致了
+	 */
+	float zSign = -1;
+
+	/**
+	 * 注意摄像机翻转之后，其向上方向时保持不变的，
+	 * 所以远近距离也需要取反，保证和摄像机不在同一侧
+	 */
+	zNear *= -1;
+	zFar *= -1;
+
+	// 记录 cot(θ/2) 的值便于计算
+	float cot_half_fov = 1 / tan((eye_fov / 2) * (MY_PI / 180));
+
+	Eigen::Matrix4f ProjectionMx;
+	ProjectionMx <<
+		0, cot_half_fov / aspect_ratio, 0, 0,
+		0, cot_half_fov, 0, 0,
+		0, 0, (zNear + zFar) / (zNear - zFar), -(2 * zNear * zFar) / (zNear - zFar),
+		0, 0, zFar, 0;
+
+	return ProjectionMx;
 }
 
 Eigen::Vector3f vertex_shader(const vertex_shader_payload& payload)
@@ -244,14 +274,14 @@ int main(int argc, const char** argv)
 	std::vector<Triangle*> TriangleList;
 
 	float angle = 140.f;
-	bool command_line = false;
+	bool command_line = true;
 
 	std::string filename = "output.png";
 	objl::Loader Loader;
-	std::string obj_path = "../models/spot/";
+	std::string obj_path = "GAMES101/Homework_3/Code/models/spot/";
 
 	// Load .obj File
-	bool loadout = Loader.LoadFile("../models/spot/spot_triangulated_good.obj");
+	bool loadout = Loader.LoadFile("GAMES101/Homework_3/Code/models/spot/spot_triangulated_good.obj");
 	for (auto mesh : Loader.LoadedMeshes)
 	{
 		for (int i = 0; i < mesh.Vertices.size(); i += 3)
@@ -259,7 +289,7 @@ int main(int argc, const char** argv)
 			Triangle* t = new Triangle();
 			for (int j = 0; j < 3; j++)
 			{
-				t->setVertex(j, Vector4f(mesh.Vertices[i + j].Position.X, mesh.Vertices[i + j].Position.Y, mesh.Vertices[i + j].Position.Z, 1.0));
+				t->setVertex(j, Vector4f(mesh.Vertices[i + j].Position.X, mesh.Vertices[i + j].Position.Y, mesh.Vertices[i + j].Position.Z, 1.f));
 				t->setNormal(j, Vector3f(mesh.Vertices[i + j].Normal.X, mesh.Vertices[i + j].Normal.Y, mesh.Vertices[i + j].Normal.Z));
 				t->setTexCoord(j, Vector2f(mesh.Vertices[i + j].TextureCoordinate.X, mesh.Vertices[i + j].TextureCoordinate.Y));
 			}
@@ -274,38 +304,72 @@ int main(int argc, const char** argv)
 
 	std::function<Eigen::Vector3f(fragment_shader_payload)> active_shader = phong_fragment_shader;
 
-	if (argc >= 2)
-	{
-		command_line = true;
-		filename = std::string(argv[1]);
+	//if (argc >= 2)
+	//{
+	//	command_line = true;
+	//	filename = std::string(argv[1]);
+	//	if (argc == 3 && std::string(argv[2]) == "texture")
+	//	{
+	//		std::cout << "Rasterizing using the texture shader\n";
+	//		active_shader = texture_fragment_shader;
+	//		texture_path = "spot_texture.png";
+	//		r.set_texture(Texture(obj_path + texture_path));
+	//	}
+	//	else if (argc == 3 && std::string(argv[2]) == "normal")
+	//	{
+	//		std::cout << "Rasterizing using the normal shader\n";
+	//		active_shader = normal_fragment_shader;
+	//	}
+	//	else if (argc == 3 && std::string(argv[2]) == "phong")
+	//	{
+	//		std::cout << "Rasterizing using the phong shader\n";
+	//		active_shader = phong_fragment_shader;
+	//	}
+	//	else if (argc == 3 && std::string(argv[2]) == "bump")
+	//	{
+	//		std::cout << "Rasterizing using the bump shader\n";
+	//		active_shader = bump_fragment_shader;
+	//	}
+	//	else if (argc == 3 && std::string(argv[2]) == "displacement")
+	//	{
+	//		std::cout << "Rasterizing using the bump shader\n";
+	//		active_shader = displacement_fragment_shader;
+	//	}
+	//}
 
-		if (argc == 3 && std::string(argv[2]) == "texture")
-		{
+	/**
+	 * 间接实现前面main函数参数数里argc>2的分支内容
+	 */
+	static std::map<std::string, int> ArgsMap = {
+		{"texture", 1}, {"normal", 2}, {"phong", 3}, {"bump", 4}, {"displacement", 5},
+	};
+
+	switch (ArgsMap["texture"])
+	{
+		case 1: // texture
 			std::cout << "Rasterizing using the texture shader\n";
 			active_shader = texture_fragment_shader;
 			texture_path = "spot_texture.png";
 			r.set_texture(Texture(obj_path + texture_path));
-		}
-		else if (argc == 3 && std::string(argv[2]) == "normal")
-		{
+			break;
+		case 2: // normal
 			std::cout << "Rasterizing using the normal shader\n";
 			active_shader = normal_fragment_shader;
-		}
-		else if (argc == 3 && std::string(argv[2]) == "phong")
-		{
+			break;
+		case 3: // phong
 			std::cout << "Rasterizing using the phong shader\n";
 			active_shader = phong_fragment_shader;
-		}
-		else if (argc == 3 && std::string(argv[2]) == "bump")
-		{
+			break;
+		case 4: // bump
 			std::cout << "Rasterizing using the bump shader\n";
 			active_shader = bump_fragment_shader;
-		}
-		else if (argc == 3 && std::string(argv[2]) == "displacement")
-		{
+			break;
+		case 5: // displacement
 			std::cout << "Rasterizing using the bump shader\n";
 			active_shader = displacement_fragment_shader;
-		}
+			break;
+
+		default: std::cout << "Unknow Rasterizing type!\n"; break;
 	}
 
 	Eigen::Vector3f eye_pos = { 0,0,10 };
