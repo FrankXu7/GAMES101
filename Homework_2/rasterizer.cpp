@@ -106,11 +106,11 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t)
 		{
 			// 颜色的着色比例，默认覆盖像素中央时全着色
 			float colorPercent = 1.f;
-#if 1
+#if 0
 			if (!t.insideTriangle(static_cast<float>(x + 0.5f), static_cast<float>(y + 0.5f))) continue;
 			// 计算深度在三角形中的插值 
 			float z_interpolated = calcDepth3D(x, y, t);
-#elif 0
+#elif 1
 			// 将一个像素分成4个部分分别进行多重采样，取4个子采样点中深度插值最小的
 			float z_interpolated = FLT_MAX;
 			// 被三角形覆盖的子采样点的数里
