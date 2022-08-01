@@ -97,7 +97,8 @@ namespace rst
 			float depth3D = 1.f / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
 			/**
 			 * 这一步就相当于各个顶点的Z轴坐标值分别与重心坐标计算所得系数相乘相加，
-			 * 即：α*az + β*ba + γ*cz（齐次坐标值通过toVector4接口获取，默认值为1.f）
+			 * 即：α*az + β*bz + γ*cz（齐次坐标值通过toVector4接口获取，默认值为1.f），
+			 * 以计算深度相对于三角形各个顶点的重心坐标插值
 			 */
 			float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
 
