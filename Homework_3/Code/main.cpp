@@ -79,7 +79,7 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float z
 		0, cot_half_fov / aspect_ratio, 0, 0,
 		0, cot_half_fov, 0, 0,
 		0, 0, (zNear + zFar) / (zNear - zFar), -(2 * zNear * zFar) / (zNear - zFar),
-		0, 0, zFar, 0;
+		0, 0, zSign, 0;
 
 	return ProjectionMx;
 }
@@ -319,7 +319,7 @@ int main(int argc, const char** argv)
 	//	{
 	//		std::cout << "Rasterizing using the normal shader\n";
 	//		active_shader = normal_fragment_shader;
-	//	}
+	//	}  
 	//	else if (argc == 3 && std::string(argv[2]) == "phong")
 	//	{
 	//		std::cout << "Rasterizing using the phong shader\n";
